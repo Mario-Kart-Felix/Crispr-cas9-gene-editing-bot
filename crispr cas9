@@ -1,0 +1,82 @@
+create a folder named input_data in the current directory and paste your files in 'fasta' format into it
+
+To count indels, click on the cell below which contains the following code:
+
+%run -m crispr_cas9.count_indels
+after that to run the script do one of the following:
+
+click Run button on the panel above
+or press Shift + Enter or Ctrl + Enter
+when the script finishes its work, the results will be written into the folder output_indels in the current directory
+
+To create matrices, click on the cell below which contains the following code:
+%run -m crispr_cas9.create_matrices
+after that to run the script do one of the following:
+
+click Run button on the panel above
+or press Shift + Enter or Ctrl + Enter
+when the script finishes its work, the results will be written into the folder output_matrices in the current directory
+
+To create plots using the excel spreadsheets made by the previous command, click on the next cell with the code:
+%run -m crispr_cas9.create_plots
+and again to run the script do one of the following:
+
+click Run button on the panel above
+or press Shift + Enter or Ctrl + Enter
+when this script finishes its work, the results will be written into the folder output_plots in the current directory
+
+NOTES:
+
+if you want to stop running script, click stop button on the panel above (which is black square).
+import crispr_cas9
+%run -m crispr_cas9.count_indels
+    ---------------
+    job started at 2021-11-17 08:12:04 ...
+    ---------------
+    
+IntProgress(value=0, bar_style='success', max=2)
+    
+    file processed: 2
+    time taken: 0.0 hours 0.0 minutes 2 seconds
+    
+    the results are in the folder 'output_indels'
+    
+    ---------------
+    ... job finished at 2021-11-17 08:12:06
+    ---------------
+    
+    
+%run -m crispr_cas9.create_matrices
+    ---------------
+    job started at 2021-011 08:12:15 ...
+    ---------------
+    
+IntProgress(value=0, bar_style='success', max=2)
+    
+    file processed: 2
+    time taken: 0.0 hours 0.0 minutes 33 seconds
+    
+    the results are in the folder 'output_indels'
+    
+    ---------------
+    ... job finished at 2021-11-17 08:12:48
+    ---------------
+    
+    
+%run -m crispr_cas9.create_plots
+    ---------------
+    job started at 2021-11-17 08:12:48 ...
+    ---------------
+    
+IntProgress(value=0, bar_style='success', max=8)
+    
+    file processed: 8
+    time taken: 0.0 hours 0.0 minutes 29 seconds
+    
+    the results are in the folder 'output_plots'
+    
+    ---------------
+    ... job finished at 2021-11- 08:13:18
+    ---------------
+    
+    
