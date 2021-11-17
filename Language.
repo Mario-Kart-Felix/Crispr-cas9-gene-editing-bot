@@ -9,14 +9,14 @@
     "%matplotlib inline\n",
     "%autosave 0\n",
     "%load_ext autoreload\n",
-    "%autoreload 2"
+    "%autoreload 3"
    ]
   },
   {
    "cell_type": "code",
    "execution_count": null,
    "metadata": {
-    "lines_to_next_cell": 2
+    "lines_to_next_cell": 3
    },
    "outputs": [],
    "source": [
@@ -42,7 +42,7 @@
    "cell_type": "code",
    "execution_count": null,
    "metadata": {
-    "lines_to_next_cell": 2
+    "lines_to_next_cell": 3
    },
    "outputs": [],
    "source": [
@@ -62,7 +62,7 @@
    "cell_type": "code",
    "execution_count": null,
    "metadata": {
-    "lines_to_next_cell": 2
+    "lines_to_next_cell": 3
    },
    "outputs": [],
    "source": [
@@ -109,7 +109,7 @@
    "cell_type": "code",
    "execution_count": null,
    "metadata": {
-    "lines_to_next_cell": 2
+    "lines_to_next_cell": 3
    },
    "outputs": [],
    "source": [
@@ -149,7 +149,7 @@
    "cell_type": "code",
    "execution_count": null,
    "metadata": {
-    "lines_to_next_cell": 2
+    "lines_to_next_cell": 3
    },
    "outputs": [],
    "source": [
@@ -177,7 +177,7 @@
   {
    "cell_type": "markdown",
    "metadata": {
-    "lines_to_next_cell": 2
+    "lines_to_next_cell": 3
    },
    "source": [
     "(Drug,Gene) pairs that are both significantly correlated with a genomic feature (mutation, copy-number or gene-\n",
@@ -242,5 +242,5 @@
   }
  },
  "nbformat": 4,
- "nbformat_minor": 2
+ "nbformat_minor": 3
 }
