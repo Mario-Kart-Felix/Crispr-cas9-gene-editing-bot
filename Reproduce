@@ -1,0 +1,299 @@
+import os
+import os.path as op
+from tqdm import tqdm
+import numpy as np
+import pickle as pkl
+from sklearn.model_selection import KFold
+Preparation
+Download the data and write the paths into Config.ipynb;
+Download the cas-offinder from http://www.rgenome.net/cas-offinder/portable and write the path into Config.ipynb, CASOFFINDERPATH field;
+Run Config.ipynb.
+Data
+The path names here correspond to variables in Config.ipynb:
+
+JostEtAlDatasetPath - https://static-content.springer.com/esm/art%3A10.1038%2Fs41587-019-0387-5/MediaObjects/41587_2019_387_MOESM3_ESM.zip - Table_S8_machine_learning_input.txt
+
+DEEPHFPATH - https://static-content.springer.com/esm/art%3A10.1038%2Fs41467-019-12281-8/MediaObjects/41467_2019_12281_MOESM3_ESM.xlsx
+
+T3619PATH - https://bioinfo.imtech.res.in/manojk/gecrispr/data/Training-Testing_dataset-T3619
+
+V520PATH - https://bioinfo.imtech.res.in/manojk/gecrispr/data/Validation_dataset-V520
+
+DeepCRISPRPath - https://static-content.springer.com/esm/art%3A10.1186%2Fs13059-018-1459-4/MediaObjects/13059_2018_1459_MOESM5_ESM.xlsx
+
+DeepCpf1KimPath - https://static-content.springer.com/esm/art%3A10.1038%2Fnbt.4061/MediaObjects/41587_2018_BFnbt4061_MOESM39_ESM.xlsx
+
+Cpf1OfftargetPath - https://static-content.springer.com/esm/art%3A10.1038%2Fnmeth.4104/MediaObjects/41592_2017_BFnmeth4104_MOESM88_ESM.xlsx
+
+PENGPATH - https://oup.silverchair-cdn.com/oup/backfile/Content_public/Journal/bioinformatics/34/17/10.1093_bioinformatics_bty558/2/bty558_supp.zip?Expires=1624603680&Signature=rbls4osUhp~BKbfZbVdUugvUHJfI2vbRRxCFbP89iN46X7vnE~GFD1LwMweuMafG8MHBVOyB4pCr-y2LDY0Xjb9fbeH31S7SorV93TRU8bEr-jKEcur-Cl1ZMH9bYOjX8d~SMwQAA7qEbP4zbK8WjwtDUayzUN7XmSRlknhm8dJUZKPsXWQ9F9iU2twVk6Pk2wo51~YUkkUJ-PtCzlmbyUeFvg43B44eSuTfhGlXF17nXcRzmn6UdTNqpOl4kSlIeT5ipPlZGxmwSHbEe64e-OC1Y0VXszrhbbG6BxlD9JKMYtLfTYG87MKS9EF1H6GTvNGkh1m2vI1su4pu1kcsaA__&Key-Pair-Id=APKAIE5G5CRDK6RD3PGA - Supplementary file 1
+
+Chr22_annotation and Chr22_genome - download the genomes as described in "Description of genome analysis pipeline".
+
+THISREPO - path to the current repository.
+
+Model training
+DeepHF
+DeepHF training routine
+s = "python reproduce_DeepHF.py -d EFFECTOR -o OUTPUT -s SEED -m MODEL USE_MSE"
+with open("reproduce_DeepHF.sh", "w") as oh:
+    oh.write("#!/bin/sh\n")
+    for a in ["WT", "eSpCas9", "SpCas9HF1"]:
+        for b in ["-u", ""]:
+            for c in ["CNN", "RNN"]:
+                u = "../models/DeepHF/"+a+"/"+c+b
+                oh.write(
+                    s.replace("EFFECTOR", a).replace(
+                        "USE_MSE", b
+                    ).replace("MODEL", c).replace("SEED", "192").replace("OUTPUT", u)+"\n"
+                )
+DeepHF 10 fold crossvalidation
+with open("reproduce_DeepHF_CV.sh", "w") as oh:
+    oh.write("#!/bin/sh\n")
+    for a,st in zip(["WT", "eSpCas9", "SpCas9HF1"], [55604, 58617, 56888]):
+        kf = KFold(n_splits=10)
+        folds = [(train, test) for train, test in kf.split(np.arange(st))]
+        fold_fn = a+".fold.pkl"
+        with open(fold_fn, "wb") as oh2:
+            pkl.dump(folds, oh2)
+        for b in ["-u", ""]:
+            for c in ["CNN", "RNN"]:
+                for i_f in [0,1,2,3,4,5,6,7,8,9]:
+                    u = "../models/DeepHF_CV/"+a+"/"+c+b
+                    oh.write(
+                        s.replace("EFFECTOR", a).replace(
+                            "USE_MSE", b
+                        ).replace("MODEL", c).replace(
+                            "SEED", "192"
+                        ).replace("OUTPUT", u)+" "+"-f "+fold_fn+" -n "+str(i_f)+"\n"
+                    )
+DeepCRISPR
+s = "python reproduce_DeepCRISPR.py -l LINE -o OUTPUT -m MODEL USE_MSE USE_LOCLO"
+with open("reproduce_DeepCRISPR.sh", "w") as oh:
+    oh.write("#!/bin/sh\n")
+    for a in ["hela", "hek293t", "hl60", "hct116"]:
+        for b in ["-u", ""]:
+            for c in ["CNN", "RNN"]:
+                for d in ["-v", ""]:
+                    u = "../models/DeepCRISPR/"+a+"/"+c+b+d
+                    oh.write(
+                        s.replace("LINE", a).replace(
+                            "USE_MSE", b
+                        ).replace("MODEL", c).replace("USE_LOCLO", d).replace("OUTPUT", u)+"\n"
+                    )
+DeepCpf1 Kim et al Dataset
+s = "python reproduce_DeepCpf1_Kim.py -o OUTPUT -m MODEL USE_MSE"
+with open("reproduce_DeepCpf1_Kim.sh", "w") as oh:
+    oh.write("#!/bin/sh\n")
+    for b in ["-u", ""]:
+        for c in ["CNN", "RNN"]:
+            u = "../models/DeepCpf1/"+c+b
+            oh.write(
+                s.replace(
+                    "USE_MSE", b
+                ).replace("MODEL", c).replace("OUTPUT", u)+"\n"
+            )
+DeepCpf1 10 fold crossvalidation
+with open("reproduce_DeepCpf1_Kim_CV.sh", "w") as oh:
+    oh.write("#!/bin/sh\n")
+    kf = KFold(n_splits=10)
+    folds = [(train, test) for train, test in kf.split(np.arange(15000))]
+    fold_fn = "DeepCpf1.fold.pkl"
+    with open(fold_fn, "wb") as oh2:
+        pkl.dump(folds, oh2)
+    for b in ["-u", ""]:
+        for c in ["CNN", "RNN"]:
+            for i_f in [0,1,2,3,4,5,6,7,8,9]:
+                u = "../models/DeepCpf1_CV/"+c+b
+                oh.write(
+                    s.replace(
+                        "USE_MSE", b
+                    ).replace("MODEL", c).replace("OUTPUT", u)+" "+"-f "+fold_fn+" -n "+str(i_f)+"\n"
+                )
+geCRISPR
+s = "python reproduce_geCRISPR.py -o OUTPUT -m MODEL USE_MSE"
+with open("reproduce_geCRISPR.sh", "w") as oh:
+    oh.write("#!/bin/sh\n")
+    for b in ["-u", ""]:
+        for c in ["CNN", "RNN"]:
+            u = "../models/geCRISPR/"+c+b
+            oh.write(
+                s.replace(
+                    "USE_MSE", b
+                ).replace("MODEL", c).replace("OUTPUT", u)+"\n"
+            )
+geCRISPR 10 fold crossvalidation
+with open("reproduce_geCRISPR_CV.sh", "w") as oh:
+    oh.write("#!/bin/sh\n")
+    kf = KFold(n_splits=10)
+    folds = [(train, test) for train, test in kf.split(np.arange(3619))]
+    fold_fn = "geCRISPR.fold.pkl"
+    with open(fold_fn, "wb") as oh2:
+        pkl.dump(folds, oh2)
+    for b in ["-u", ""]:
+        for c in ["CNN", "RNN"]:
+            for i_f in [0,1,2,3,4,5,6,7,8,9]:
+                u = "../models/geCRISPR_CV/"+c+b
+                oh.write(
+                    s.replace(
+                        "USE_MSE", b
+                    ).replace("MODEL", c).replace("OUTPUT", u)+" "+"-f "+fold_fn+" -n "+str(i_f)+"\n"
+                )
+Jost Et Al
+s = "python reproduce_2d_models.py -d Cas9 -o OUTPUT USE_MSE"
+with open("reproduce_JostEtAl.sh", "w") as oh:
+    oh.write("#!/bin/sh\n")
+    for b in ["-u", ""]:
+        u = "../models/JostEtAl/model"+c+b
+        oh.write(
+            s.replace(
+                "USE_MSE", b
+            ).replace("OUTPUT", u)+"\n"
+        )
+Jost et al 10 fold crossvalidation
+with open("reproduce_JostEtAl_CV.sh", "w") as oh:
+    oh.write("#!/bin/sh\n")
+    kf = KFold(n_splits=10)
+    folds = [(train, test) for train, test in kf.split(np.arange(26248))]
+    fold_fn = "JostEtAl.fold.pkl"
+    with open(fold_fn, "wb") as oh2:
+        pkl.dump(folds, oh2)
+    for b in ["-u", ""]:
+        for i_f in [0,1,2,3,4,5,6,7,8,9]:
+            u = "../models/JostEtAl_CV/model"+c+b
+            oh.write(
+                s.replace(
+                    "USE_MSE", b
+                ).replace("OUTPUT", u)+" "+"-f "+fold_fn+" -n "+str(i_f)+"\n"
+            )
+Cpf1 offtargets
+s = "python reproduce_2d_models.py -d Cpf1 -o OUTPUT USE_MSE"
+with open("reproduce_Cpf1_offtargets.sh", "w") as oh:
+    oh.write("#!/bin/sh\n")
+    for b in ["-u", ""]:
+        u = "../models/Cpf1_offtargets/model"+b
+        oh.write(
+            s.replace(
+                "USE_MSE", b
+            ).replace("OUTPUT", u)+"\n"
+        )
+Cpf1 offtargets 10 fold crossvalidation
+with open("reproduce_Cpf1_offtargets_CV.sh", "w") as oh:
+    oh.write("#!/bin/sh\n")
+    kf = KFold(n_splits=10)
+    folds = [(train, test) for train, test in kf.split(np.arange(1595))]
+    fold_fn = "Cpf1off.fold.pkl"
+    with open(fold_fn, "wb") as oh2:
+        pkl.dump(folds, oh2)
+    for b in ["-u", ""]:
+        for i_f in [0,1,2,3,4,5,6,7,8,9]:
+            u = "../models/Cpf1_offtargets_CV/model"+b
+            oh.write(
+                s.replace(
+                    "USE_MSE", b
+                ).replace("OUTPUT", u)+" "+"-f "+fold_fn+" -n "+str(i_f)+"\n"
+            )
+Chromosome 22 on-target
+models = [
+    ("../models/DeepHF/WT/CNN59.ptch", "CNN", "Cas9", "../results/Chr22/DeepHF/WT"),
+    ("../models/DeepHF/WT/CNN-u59.ptch", "CNN", "Cas9", "../results/Chr22/DeepHF/WT"),
+    ("../models/DeepHF/WT/RNN59.ptch", "RNN", "Cas9", "../results/Chr22/DeepHF/WT"),
+    ("../models/DeepHF/WT/RNN-u59.ptch", "RNN", "Cas9", "../results/Chr22/DeepHF/WT"),
+    ("../models/DeepHF/eSpCas9/CNN59.ptch", "CNN", "Cas9", "../results/Chr22/DeepHF/eSpCas9"),
+    ("../models/DeepHF/eSpCas9/CNN-u59.ptch", "CNN", "Cas9", "../results/Chr22/DeepHF/eSpCas9"),
+    ("../models/DeepHF/eSpCas9/RNN59.ptch", "RNN", "Cas9", "../results/Chr22/DeepHF/eSpCas9"),
+    ("../models/DeepHF/eSpCas9/RNN-u59.ptch", "RNN", "Cas9", "../results/Chr22/DeepHF/eSpCas9"),
+    ("../models/DeepHF/SpCas9HF1/CNN59.ptch", "CNN", "Cas9", "../results/Chr22/DeepHF/SpCas9HF1"),
+    ("../models/DeepHF/SpCas9HF1/CNN-u59.ptch", "CNN", "Cas9", "../results/Chr22/DeepHF/SpCas9HF1"),
+    ("../models/DeepHF/SpCas9HF1/RNN59.ptch", "RNN", "Cas9", "../results/Chr22/DeepHF/SpCas9HF1"),
+    ("../models/DeepHF/SpCas9HF1/RNN-u59.ptch", "RNN", "Cas9", "../results/Chr22/DeepHF/SpCas9HF1"),
+    ("../models/geCRISPR/RNN-u59.ptch", "RNN", "Cas9", "../results/Chr22/geCRISPR"),
+    ("../models/geCRISPR/RNN59.ptch", "RNN", "Cas9", "../results/Chr22/geCRISPR"),
+    ("../models/geCRISPR/CNN-u59.ptch", "CNN", "Cas9", "../results/Chr22/geCRISPR"),
+    ("../models/geCRISPR/CNN59.ptch", "CNN", "Cas9", "../results/Chr22/geCRISPR"),
+    ("../models/JostEtAl/modelRNN59.ptch", "2D-CNN", "Cas9", "../results/Chr22/JostEtAl"),
+    ("../models/JostEtAl/modelRNN-u59.ptch", "2D-CNN", "Cas9", "../results/Chr22/JostEtAl"),
+    ("../models/Cpf1_offtargets/model59.ptch", "2D-CNN", "Cpf1", "../results/Chr22/Cas12OT"),
+    ("../models/Cpf1_offtargets/model-u59.ptch", "2D-CNN", "Cpf1", "../results/Chr22/Cas12OT"),
+    ("../models/DeepCpf1/CNN59.ptch", "CNN", "Cpf1", "../results/Chr22/DeepCpf1"),
+    ("../models/DeepCpf1/CNN-u59.ptch", "CNN", "Cpf1", "../results/Chr22/DeepCpf1"),
+    ("../models/DeepCpf1/RNN59.ptch", "RNN", "Cpf1", "../results/Chr22/DeepCpf1"),
+    ("../models/DeepCpf1/RNN-u59.ptch", "RNN", "Cpf1", "../results/Chr22/DeepCpf1"),
+]
+s = "python reproduce_Chr22.py -m MODEL -o OUTPUT -n 100 -e EFFECTOR -a ARCHITECTURE"
+with open("reproduce_Chr22.sh", "w") as oh:
+    oh.write("#!/bin/sh\n")
+    for m,a,e,o in models:
+        oh.write(
+            s.replace("MODEL", m).replace("EFFECTOR", e).replace("ARCHITECTURE", a).replace("OUTPUT", o)+"\n"
+        )
+Cleaning unnecessary files
+experiments = [a for a in os.walk("../models/")][0][1]
+files = sum(
+    [[op.join("../models", a, c) for c in [b for b in os.walk(op.join("../models", a))][0][2]] for a in experiments],
+    []
+)
+model_checkpoints = list(filter(lambda x: ".json" not in x, files))
+for a in tqdm(model_checkpoints):
+    if "59" not in a:
+        os.system("rm "+a)
+100%|██████████| 5572/5572 [00:15<00:00, 370.53it/s] 
+experiments = [a for a in os.walk("../models/DeepCRISPR")][0][1]
+files = sum(
+    [[op.join("../models/DeepCRISPR", a, c) for c in [b for b in os.walk(op.join("../models/DeepCRISPR", a))][0][2]] for a in experiments],
+    []
+)
+model_checkpoints = list(filter(lambda x: ".json" not in x, files))
+for a in tqdm(model_checkpoints):
+    if "59" not in a:
+        os.system("rm "+a)
+100%|██████████| 32/32 [00:00<00:00, 426088.03it/s]
+experiments = [a for a in os.walk("../models/DeepCRISPR_LC/")][0][1]
+files = sum(
+    [[op.join("../models/DeepCRISPR_LC", a, c) for c in [b for b in os.walk(op.join("../models/DeepCRISPR_LC", a))][0][2]] for a in experiments],
+    []
+)
+model_checkpoints = list(filter(lambda x: ".json" not in x, files))
+for a in tqdm(model_checkpoints):
+    if "59" not in a:
+        os.system("rm "+a)
+100%|██████████| 10860/10860 [00:11<00:00, 905.73it/s] 
+experiments = [a for a in os.walk("../models/DeepHF")][0][1]
+files = sum(
+    [[op.join("../models/DeepHF", a, c) for c in [b for b in os.walk(op.join("../models/DeepHF", a))][0][2]] for a in experiments],
+    []
+)
+model_checkpoints = list(filter(lambda x: ".json" not in x, files))
+for a in tqdm(model_checkpoints):
+    if "59" not in a:
+        os.system("rm "+a)
+100%|██████████| 74/74 [00:00<00:00, 285.73it/s]
+experiments = [a for a in os.walk("../models/DeepHF_LC/")][0][1]
+files = sum(
+    [[op.join("../models/DeepHF_LC", a, c) for c in [b for b in os.walk(op.join("../models/DeepHF_LC", a))][0][2]] for a in experiments],
+    []
+)
+model_checkpoints = list(filter(lambda x: ".json" not in x, files))
+for a in tqdm(model_checkpoints):
+    if "59" not in a:
+        os.system("rm "+a)
+100%|██████████| 41/41 [00:00<00:00, 634562.60it/s]
+Learning curves
+Set the directory for learning curves beforehand:
+
+LCDIR = "./results/LC/"
+proportions = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 0.9, 0.95, 0.99]
+models = [
+    "DeepCpf1Kim", "DeepHFWt", "DeepHFeSpCas9", "DeepHFSpCas9HF1", 
+    "Cas9_Offtarget", "Cpf1_Offtarget"
+]
+command = "python LC.py -d MODEL -p PROPORTIONS -f MODEL.sh -o OUTDIR\n"
+with open("reproduce_LC.sh", "w") as oh:
+    oh.write("#!/bin/bash\n\n\n")
+    for a in models:
+        oh.write(
+            command.replace("MODEL", a).replace(
+                "PROPORTIONS", ",".join([str(b) for b in proportions])
+            ).replace("OUTDIR", LCDIR)
+        )
+The tables and figures
+Now you can run the other .ipynb files to reproduce all figures and tables for the paper.
