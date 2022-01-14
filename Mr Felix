@@ -1,0 +1,25 @@
+using Mr.Felix
+
+using Revise
+
+using JSON
+
+pase = abspath(readlink("setting.json"))
+
+SE = JSON.parsefile(pase)
+
+PAK = joinpath(dirname(dirname(dirname(pase))), "Kate.jl")
+
+PAI = joinpath(PAK, "input/")
+
+PAO = joinpath(PAK, "output/")
+
+PAR = joinpath("home/jovyan/craft/data", SE["re"])
+
+PASN = "/opt/snpeff/snpEff/snpEff.jar"
+
+println("Settings are loaded.\n")
+
+Kate.test()
+
+println("\nEnvironment passed.")
