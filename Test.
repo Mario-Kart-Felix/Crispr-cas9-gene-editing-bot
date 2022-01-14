@@ -1,0 +1,84 @@
+using Revise
+
+using Kate
+Test Environment
+Kate.test()
+Set Parameters
+# Experiment 
+ex = "human_cdna_valeria"
+
+# Fragment length (not needed if paired end)
+fr = 51
+
+# Standard deviation of read length (not needed if paired end)
+sd = 0.05
+
+# Reference transcriptome
+paf = "../input/human_reference_transcriptome/Homo_sapiens.GRCh38.cdna.all.fa.gz"
+
+# paf = "../input/mouse_reference_transcriptome/Mus_musculus.GRCm38.cdna.all.fa.gz"
+
+pat = "../input/human_reference_transcriptome/enst_gene_name.tsv"
+
+n_jo = 10;
+pai = joinpath("../input/")
+
+pae = joinpath(pai, ex)
+
+pao = joinpath("../output/", ex);
+Check reads
+re_ = Kate.find(pae)
+Kate.check(re_, joinpath(pao, string("check_raw")), n_jo)
+### Count transcript
+na_ = ["R1", "read1", "_1.fq"]
+
+naf = ""
+
+pap = joinpath(pao, "psuedoalign/")
+
+if !isdir(pap)
+
+    for fq1 in re_
+
+        for na in na_ if occursin(na, fq1)
+
+                naf = na
+
+                nar = replace(naf, "1" => "2")
+
+                fq2 = replace(fq1, naf => nar)
+
+                if !isfile(fq2)
+
+                    fq2 = nothing
+
+                end
+
+                sa = last(splitdir(splitext(split(fq1, naf)[1])[1]))
+
+                println("Working on sample: $sa\n")
+
+                pas = joinpath(pap, sa)
+
+                Kate.count_transcript(
+                    paf,
+                    pas,
+                    n_jo,
+                    fq1,
+                    fq2,
+                    fr,
+                    sd,
+                )
+
+            end
+
+        end
+
+    end
+
+else
+
+    println("Skipping psuedoalignment because directory already exists: $pap")
+    
+end
+### TODO: Check mapping rate and abundance output
