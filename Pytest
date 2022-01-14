@@ -1,0 +1,55 @@
+In [] %load_ext autoreload
+%autoreload 2
+import kwat
+import numpy as np
+import pandas as pd
+pa = "../output/human_cdna_valeria/"
+
+kwat.path.make(pa)
+tpm__ = []
+
+for na in kwat.path.list_directory("../output/human_cdna_valeria/psuedoalign/"):
+
+    tpm_ = pd.read_csv(
+        "{}/{}".format(na, "abundance.tsv"),
+        sep="\t",
+        index_col=0,
+    ).loc[:, "tpm"]
+
+    tpm_.name = na.split(sep="/")[-2]
+
+    tpm__.append(tpm_)
+
+tpm_enst_sample = pd.concat(tpm__, axis=1)
+
+tpm_enst_sample.index.name = "ENST"
+
+tpm_enst_sample.to_csv(path_or_buf="{}tpm_enst_sample.tsv".format(pa), sep="\t")
+
+print(tpm_enst_sample.sum())
+
+tpm_enst_sample
+tpm_enst_sample.index = kwat.gene.rename(
+    [en.split(sep=".")[0] for en in tpm_enst_sample.index.values]
+)
+
+tpmsum_gene_sample = (
+    tpm_enst_sample.loc[tpm_enst_sample.index.notna(), :].groupby(level=0).sum()
+)
+
+tpmsum_gene_sample.index.name = "Gene"
+
+tpmsum_gene_sample.to_csv(path_or_buf="{}tpmsum_gene_sample.tsv".format(pa), sep="\t")
+
+print(tpmsum_gene_sample.sum())
+
+tpmsum_gene_sample
+tpmsum_gene_sample = tpmsum_gene_sample.loc[
+    tpmsum_gene_sample.index.intersection(kwat.gene.select()), :
+]
+
+tpmsum_gene_sample.to_csv(
+    path_or_buf="../output/tpm/tpmsum_geneselected_sample.tsv", sep="\t"
+)
+
+tpmsum_gene_samplej
